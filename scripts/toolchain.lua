@@ -26,6 +26,7 @@ function toolchain(_buildDir, _libDir)
 			{ "linux-mips-gcc",  "Linux (MIPS, GCC compiler)" },
 			{ "linux-arm-gcc",   "Linux (ARM, GCC compiler)"  },
 			{ "ios-arm",         "iOS - ARM"                  },
+			{ "ios-armv7s",      "iOS - ARMv7s"               },
 			{ "ios-arm64",       "iOS - ARM64"                },
 			{ "ios-simulator",   "iOS - Simulator"            },
 			{ "tvos-arm64",      "tvOS - ARM64"               },
@@ -217,8 +218,9 @@ function toolchain(_buildDir, _libDir)
 		elseif "freebsd" == _OPTIONS["gcc"] then
 			location (path.join(_buildDir, "projects", _ACTION .. "-freebsd"))
 
-		elseif "ios-arm"   == _OPTIONS["gcc"]
-			or "ios-arm64" == _OPTIONS["gcc"] then
+		elseif "ios-arm"   	== _OPTIONS["gcc"]
+			or "ios-armv7s" == _OPTIONS["gcc"]
+			or "ios-arm64" 	== _OPTIONS["gcc"] then
 			premake.gcc.cc  = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
 			premake.gcc.cxx = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
 			premake.gcc.ar  = "ar"
@@ -1155,6 +1157,17 @@ function toolchain(_buildDir, _libDir)
 		}
 		buildoptions {
 			"-arch armv7",
+		}
+
+	configuration { "ios-armv7s" }
+		targetdir (path.join(_buildDir, "ios-armv7s/bin"))
+		objdir (path.join(_buildDir, "ios-armv7s/obj"))
+		libdirs { path.join(_libDir, "lib/ios-armv7s") }
+		linkoptions {
+			"-arch armv7s",
+		}
+		buildoptions {
+			"-arch armv7s",
 		}
 
 	configuration { "ios-arm64" }
