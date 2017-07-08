@@ -29,6 +29,7 @@ function toolchain(_buildDir, _libDir)
 			{ "ios-armv7s",      "iOS - ARMv7s"               },
 			{ "ios-arm64",       "iOS - ARM64"                },
 			{ "ios-simulator",   "iOS - Simulator"            },
+			{ "ios-simulator-64","iOS - Simulator 64-bit (iPad)"},
 			{ "tvos-arm64",      "tvOS - ARM64"               },
 			{ "tvos-simulator",  "tvOS - Simulator"           },
 			{ "mingw-gcc",       "MinGW"                      },
@@ -226,11 +227,12 @@ function toolchain(_buildDir, _libDir)
 			premake.gcc.ar  = "ar"
 			location (path.join(_buildDir, "projects", _ACTION .. "-" .. _OPTIONS["gcc"]))
 
-		elseif "ios-simulator" == _OPTIONS["gcc"] then
+		elseif "ios-simulator" == _OPTIONS["gcc"] 
+			or "ios-simulator-64" == _OPTIONS["gcc"] then
 			premake.gcc.cc  = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
 			premake.gcc.cxx = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
 			premake.gcc.ar  = "ar"
-			location (path.join(_buildDir, "projects", _ACTION .. "-ios-simulator"))
+			location (path.join(_buildDir, "projects", _ACTION .. "-" .. _OPTIONS["gcc"]))
 
 		elseif "tvos-arm64" == _OPTIONS["gcc"] then
 			premake.gcc.cc  = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
@@ -1194,13 +1196,9 @@ function toolchain(_buildDir, _libDir)
 			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS" ..iosPlatform .. ".sdk",
 		}
 
-	configuration { "ios-simulator" }
-		targetdir (path.join(_buildDir, "ios-simulator/bin"))
-		objdir (path.join(_buildDir, "ios-simulator/obj"))
-		libdirs { path.join(_libDir, "lib/ios-simulator") }
+	configuration { "ios-simulator*" }
 		linkoptions {
 			"-mios-simulator-version-min=7.0",
-			"-arch i386",
 			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator" ..iosPlatform .. ".sdk",
 			"-L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator" ..iosPlatform .. ".sdk/usr/lib/system",
 			"-F/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator" ..iosPlatform .. ".sdk/System/Library/Frameworks",
@@ -1208,8 +1206,27 @@ function toolchain(_buildDir, _libDir)
 		}
 		buildoptions {
 			"-mios-simulator-version-min=7.0",
-			"-arch i386",
 			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator" ..iosPlatform .. ".sdk",
+		}
+	configuration { "ios-simulator" }
+		targetdir (path.join(_buildDir, "ios-simulator/bin"))
+		objdir (path.join(_buildDir, "ios-simulator/obj"))
+		libdirs { path.join(_libDir, "lib/ios-simulator") }
+		linkoptions {
+			"-arch i386",
+		}
+		buildoptions {
+			"-arch i386",
+		}
+	configuration { "ios-simulator-64" }
+		targetdir (path.join(_buildDir, "ios-simulator-64/bin"))
+		objdir (path.join(_buildDir, "ios-simulator-64/obj"))
+		libdirs { path.join(_libDir, "lib/ios-simulator-64") }
+		linkoptions {
+			"-arch x86_64",
+		}
+		buildoptions {
+			"-arch x86_64",
 		}
 
 	configuration { "tvos*" }
