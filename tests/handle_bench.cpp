@@ -1,4 +1,8 @@
-#include <bx/bx.h>
+/*
+ * Copyright 2010-2017 Branimir Karadzic. All rights reserved.
+ * License: https://github.com/bkaradzic/bx#license-bsd-2-clause
+ */
+
 #include <bx/timer.h>
 #include <bx/handlealloc.h>
 #include <bx/maputil.h>
@@ -99,5 +103,8 @@ int main()
 		printf("HandleHashMap: %15f\n", double(elapsed) );
 	}
 
-	return EXIT_SUCCESS;
+	extern void simd_bench();
+	simd_bench();
+
+	return bx::kExitSuccess;
 }
