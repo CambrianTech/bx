@@ -1143,6 +1143,7 @@ function toolchain(_buildDir, _libDir)
 			"-Wfatal-errors",
 			"-Wunused-value",
 			"-Wundef",
+			"-fembed-bitcode",
 		}
 		includedirs { path.join(bxDir, "include/compat/ios") }
 
