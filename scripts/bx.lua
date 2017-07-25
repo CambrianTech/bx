@@ -21,9 +21,4 @@ project "bx"
 			"-fPIC",
 		}
 
-	configuration { "ios-*" }
-		buildoptions {
-			"-fembed-bitcode",
-		}
-
 	configuration {}
