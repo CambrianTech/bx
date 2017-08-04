@@ -14,6 +14,7 @@ function toolchain(_buildDir, _libDir)
 		description = "Choose GCC flavor",
 		allowed = {
 			{ "android-arm",     "Android - ARM"              },
+			{ "android-arm64",    "Android - ARM64"           },
 			{ "android-mips",    "Android - MIPS"             },
 			{ "android-x86",     "Android - x86"              },
 			{ "asmjs",           "Emscripten/asm.js"          },
@@ -165,7 +166,8 @@ function toolchain(_buildDir, _libDir)
 			"ExtraWarnings",
 		}
 
-		if "android-arm" == _OPTIONS["gcc"] then
+		if "android-arm" == _OPTIONS["gcc"] 
+			or "android-arm64" == _OPTIONS["gcc"] then
 
 			if not os.getenv("ANDROID_NDK_ARM")
 			or not os.getenv("ANDROID_NDK_CLANG")
@@ -176,7 +178,7 @@ function toolchain(_buildDir, _libDir)
 			premake.gcc.cc   = "$(ANDROID_NDK_CLANG)/bin/clang"
 			premake.gcc.cxx  = "$(ANDROID_NDK_CLANG)/bin/clang++"
 			premake.gcc.llvm = true
-			location (path.join(_buildDir, "projects", _ACTION .. "-android-arm"))
+			location (path.join(_buildDir, "projects", _ACTION .. "-" .. _OPTIONS["gcc"]))
 
 		elseif "android-mips" == _OPTIONS["gcc"] then
 
