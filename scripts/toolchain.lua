@@ -14,7 +14,7 @@ function toolchain(_buildDir, _libDir)
 		description = "Choose GCC flavor",
 		allowed = {
 			{ "android-arm",     "Android - ARM"              },
-			{ "android-arm64",    "Android - ARM64"           },
+			{ "android-arm64",   "Android - ARM64"           },
 			{ "android-mips",    "Android - MIPS"             },
 			{ "android-x86",     "Android - x86"              },
 			{ "asmjs",           "Emscripten/asm.js"          },
