@@ -6,10 +6,9 @@
 #ifndef BX_READERWRITER_H_HEADER_GUARD
 #define BX_READERWRITER_H_HEADER_GUARD
 
+#include "bx.h"
 #include "allocator.h"
 #include "error.h"
-#include "endian.h"
-#include "filepath.h"
 #include "uint32_t.h"
 
 BX_ERROR_RESULT(BX_ERROR_READERWRITER_OPEN,         BX_MAKEFOURCC('R', 'W', 0, 1) );
@@ -66,21 +65,14 @@ namespace bx
 	struct BX_NO_VTABLE ReaderOpenI
 	{
 		virtual ~ReaderOpenI() = 0;
-		virtual bool open(const FilePath& _filePath, Error* _err) = 0;
+		virtual bool open(const char* _filePath, Error* _err) = 0;
 	};
 
 	///
 	struct BX_NO_VTABLE WriterOpenI
 	{
 		virtual ~WriterOpenI() = 0;
-		virtual bool open(const FilePath& _filePath, bool _append, Error* _err) = 0;
-	};
-
-	///
-	struct BX_NO_VTABLE ProcessOpenI
-	{
-		virtual ~ProcessOpenI() = 0;
-		virtual bool open(const FilePath& _filePath, const StringView& _args, Error* _err) = 0;
+		virtual bool open(const char* _filePath, bool _append, Error* _err) = 0;
 	};
 
 	///
@@ -118,10 +110,10 @@ namespace bx
 		virtual ~StaticMemoryBlock();
 
 		///
-		virtual void* more(uint32_t _size = 0) override;
+		virtual void* more(uint32_t _size = 0);
 
 		///
-		virtual uint32_t getSize() override;
+		virtual uint32_t getSize() BX_OVERRIDE;
 
 	private:
 		void* m_data;
@@ -139,10 +131,10 @@ namespace bx
 		virtual ~MemoryBlock();
 
 		///
-		virtual void* more(uint32_t _size = 0) override;
+		virtual void* more(uint32_t _size = 0) BX_OVERRIDE;
 
 		///
-		virtual uint32_t getSize() override;
+		virtual uint32_t getSize() BX_OVERRIDE;
 
 	private:
 		AllocatorI* m_allocator;
@@ -161,10 +153,10 @@ namespace bx
 		virtual ~SizerWriter();
 
 		///
-		virtual int64_t seek(int64_t _offset = 0, Whence::Enum _whence = Whence::Current) override;
+		virtual int64_t seek(int64_t _offset = 0, Whence::Enum _whence = Whence::Current) BX_OVERRIDE;
 
 		///
-		virtual int32_t write(const void* /*_data*/, int32_t _size, Error* _err) override;
+		virtual int32_t write(const void* /*_data*/, int32_t _size, Error* _err) BX_OVERRIDE;
 
 	private:
 		int64_t m_pos;
@@ -182,10 +174,10 @@ namespace bx
 		virtual ~MemoryReader();
 
 		///
-		virtual int64_t seek(int64_t _offset, Whence::Enum _whence) override;
+		virtual int64_t seek(int64_t _offset, Whence::Enum _whence) BX_OVERRIDE;
 
 		///
-		virtual int32_t read(void* _data, int32_t _size, Error* _err) override;
+		virtual int32_t read(void* _data, int32_t _size, Error* _err) BX_OVERRIDE;
 
 		///
 		const uint8_t* getDataPtr() const;
@@ -213,10 +205,10 @@ namespace bx
 		virtual ~MemoryWriter();
 
 		///
-		virtual int64_t seek(int64_t _offset = 0, Whence::Enum _whence = Whence::Current) override;
+		virtual int64_t seek(int64_t _offset = 0, Whence::Enum _whence = Whence::Current) BX_OVERRIDE;
 
 		///
-		virtual int32_t write(const void* _data, int32_t _size, Error* _err) override;
+		virtual int32_t write(const void* _data, int32_t _size, Error* _err) BX_OVERRIDE;
 
 	private:
 		MemoryBlockI* m_memBlock;
@@ -254,12 +246,6 @@ namespace bx
 
 	/// Write data.
 	int32_t write(WriterI* _writer, const void* _data, int32_t _size, Error* _err = NULL);
-
-	/// Write C string.
-	inline int32_t write(WriterI* _writer, const char* _str, Error* _err = NULL);
-
-	/// Write string view.
-	inline int32_t write(WriterI* _writer, const StringView& _str, Error* _err = NULL);
 
 	/// Write repeat the same value.
 	int32_t writeRep(WriterI* _writer, uint8_t _byte, int32_t _size, Error* _err = NULL);
@@ -302,19 +288,16 @@ namespace bx
 	int32_t align(WriterSeekerI* _writer, uint32_t _alignment, Error* _err = NULL);
 
 	///
-	bool open(ReaderOpenI* _reader, const FilePath& _filePath, Error* _err = NULL);
+	bool open(ReaderOpenI* _reader, const char* _filePath, Error* _err = NULL);
 
 	///
-	bool open(WriterOpenI* _writer, const FilePath& _filePath, bool _append = false, Error* _err = NULL);
-
-	///
-	bool open(ProcessOpenI* _process, const FilePath& _filePath, const StringView& _args, Error* _err = NULL);
+	bool open(WriterOpenI* _writer, const char* _filePath, bool _append = false, Error* _err = NULL);
 
 	///
 	void close(CloserI* _reader);
 
 } // namespace bx
 
-#include "inline/readerwriter.inl"
+#include "readerwriter.inl"
 
 #endif // BX_READERWRITER_H_HEADER_GUARD

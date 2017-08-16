@@ -25,9 +25,6 @@ namespace bx
 	///
 	void debugPrintfData(const void* _data, uint32_t _size, const char* _format, ...);
 
-	///
-	struct WriterI* getDebugOut();
-
 } // namespace bx
 
 #endif // BX_DEBUG_H_HEADER_GUARD

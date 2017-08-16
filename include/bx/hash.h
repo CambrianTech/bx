@@ -7,7 +7,6 @@
 #define BX_HASH_H_HEADER_GUARD
 
 #include "allocator.h" // isAligned
-#include "string.h" // StringView
 
 namespace bx
 {
@@ -24,6 +23,12 @@ namespace bx
 		void add(const void* _data, int _len);
 
 		///
+		void addAligned(const void* _data, int _len);
+
+		///
+		void addUnaligned(const void* _data, int _len);
+
+		///
 		template<typename Ty>
 		void add(Ty _value);
 
@@ -31,12 +36,6 @@ namespace bx
 		uint32_t end();
 
 	private:
-		///
-		void addAligned(const void* _data, int _len);
-
-		///
-		void addUnaligned(const void* _data, int _len);
-
 		///
 		static void readUnaligned(const void* _data, uint32_t& _out);
 
@@ -56,14 +55,8 @@ namespace bx
 	template <typename Ty>
 	uint32_t hashMurmur2A(const Ty& _data);
 
-	///
-	uint32_t hashMurmur2A(const StringView& _data);
-
-	///
-	uint32_t hashMurmur2A(const char* _data);
-
 } // namespace bx
 
-#include "inline/hash.inl"
+#include "hash.inl"
 
 #endif // BX_HASH_H_HEADER_GUARD

@@ -19,9 +19,7 @@ namespace bx
 {
 	int64_t getHPCounter()
 	{
-#if    BX_PLATFORM_WINDOWS \
-	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+#if BX_PLATFORM_WINDOWS || BX_PLATFORM_XBOX360 || BX_PLATFORM_XBOXONE || BX_PLATFORM_WINRT
 		LARGE_INTEGER li;
 		// Performance counter value may unexpectedly leap forward
 		// http://support.microsoft.com/kb/274323
@@ -33,22 +31,17 @@ namespace bx
 		int64_t i64 = now.tv_sec*INT64_C(1000000000) + now.tv_nsec;
 #elif BX_PLATFORM_EMSCRIPTEN
 		int64_t i64 = int64_t(1000.0f * emscripten_get_now() );
-#elif !BX_PLATFORM_NONE
+#else
 		struct timeval now;
 		gettimeofday(&now, 0);
 		int64_t i64 = now.tv_sec*INT64_C(1000000) + now.tv_usec;
-#else
-		BX_CHECK(false, "Not implemented!");
-		int64_t i64 = UINT64_MAX;
 #endif // BX_PLATFORM_
 		return i64;
 	}
 
 	int64_t getHPFrequency()
 	{
-#if    BX_PLATFORM_WINDOWS \
-	|| BX_PLATFORM_XBOXONE \
-	|| BX_PLATFORM_WINRT
+#if BX_PLATFORM_WINDOWS || BX_PLATFORM_XBOX360 || BX_PLATFORM_XBOXONE || BX_PLATFORM_WINRT
 		LARGE_INTEGER li;
 		QueryPerformanceFrequency(&li);
 		return li.QuadPart;

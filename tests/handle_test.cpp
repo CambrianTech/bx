@@ -5,7 +5,7 @@
 
 #include "test.h"
 #include <bx/handlealloc.h>
-#include <bx/hash.h>
+#include <bx/string.h>
 
 TEST_CASE("HandleListT", "")
 {

@@ -12,12 +12,12 @@
 
 namespace bx
 {
-	static const uint16_t kInvalidHandle = UINT16_MAX;
-
 	///
 	class HandleAlloc
 	{
 	public:
+		static const uint16_t invalid = UINT16_MAX;
+
 		///
 		HandleAlloc(uint16_t _maxHandles);
 
@@ -87,6 +87,8 @@ namespace bx
 	class HandleListT
 	{
 	public:
+		static const uint16_t invalid = UINT16_MAX;
+
 		///
 		HandleListT();
 
@@ -150,6 +152,8 @@ namespace bx
 	class HandleAllocLruT
 	{
 	public:
+		static const uint16_t invalid = UINT16_MAX;
+
 		///
 		HandleAllocLruT();
 
@@ -205,6 +209,8 @@ namespace bx
 	class HandleHashMapT
 	{
 	public:
+		static const uint16_t invalid = UINT16_MAX;
+
 		///
 		HandleHashMapT();
 
@@ -274,6 +280,8 @@ namespace bx
 	class HandleHashMapAllocT
 	{
 	public:
+		static const uint16_t invalid = UINT16_MAX;
+
 		///
 		HandleHashMapAllocT();
 
@@ -317,6 +325,6 @@ namespace bx
 
 } // namespace bx
 
-#include "inline/handlealloc.inl"
+#include "handlealloc.inl"
 
 #endif // BX_HANDLE_ALLOC_H_HEADER_GUARD

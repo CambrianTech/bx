@@ -9,11 +9,16 @@
 #include "bx.h"
 
 #if BX_COMPILER_MSVC
-#	include <math.h> // math.h is included because VS bitches:
-					 // warning C4985: 'ceil': attributes not present on previous declaration.
-					 // must be included before intrin.h.
-#	include <intrin.h>
-#	include <windows.h>
+#	if BX_PLATFORM_XBOX360
+#		include <ppcintrinsics.h>
+#		include <xtl.h>
+#	else
+#		include <math.h> // math.h is included because VS bitches:
+						 // warning C4985: 'ceil': attributes not present on previous declaration.
+						 // must be included before intrin.h.
+#		include <intrin.h>
+#		include <windows.h>
+#	endif // !BX_PLATFORM_XBOX360
 #	if BX_PLATFORM_WINRT
 #		define _InterlockedExchangeAdd64 InterlockedExchangeAdd64
 #	endif // BX_PLATFORM_WINRT
@@ -62,7 +67,9 @@ namespace bx
 	///
 	inline void memoryBarrier()
 	{
-#if BX_PLATFORM_WINRT
+#if BX_PLATFORM_XBOX360
+		__lwsync();
+#elif BX_PLATFORM_WINRT
 		MemoryBarrier();
 #elif BX_COMPILER_MSVC
 		_mm_mfence();

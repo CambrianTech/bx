@@ -6,7 +6,7 @@
 #ifndef BX_EASING_H_HEADER_GUARD
 #define BX_EASING_H_HEADER_GUARD
 
-#include "math.h"
+#include "fpumath.h"
 
 // Reference:
 // http://easings.net/
@@ -193,6 +193,6 @@ namespace bx
 
 } // namespace bx
 
-#include "inline/easing.inl"
+#include "easing.inl"
 
 #endif // BX_EASING_H_HEADER_GUARD

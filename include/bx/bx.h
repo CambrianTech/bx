@@ -12,7 +12,6 @@
 #include <stdlib.h> // size_t
 #include <stddef.h> // ptrdiff_t
 
-#include "platform.h"
 #include "config.h"
 #include "macros.h"
 
@@ -27,9 +26,6 @@
 
 namespace bx
 {
-	const int32_t kExitSuccess = 0;
-	const int32_t kExitFailure = 1;
-
 	/// Template for avoiding MSVC: C4127: conditional expression is constant
 	template<bool>
 	bool isEnabled();
@@ -66,11 +62,8 @@ namespace bx
 	///
 	void memSet(void* _dst, uint8_t _ch, size_t _numBytes);
 
-	///
-	int32_t memCmp(const void* _lhs, const void* _rhs, size_t _numBytes);
-
 } // namespace bx
 
-#include "inline/bx.inl"
+#include "bx.inl"
 
 #endif // BX_H_HEADER_GUARD

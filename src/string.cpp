@@ -25,19 +25,14 @@ namespace bx
 			;
 	}
 
-	inline bool isInRange(char _ch, char _from, char _to)
-	{
-		return unsigned(_ch - _from) <= unsigned(_to-_from);
-	}
-
 	bool isUpper(char _ch)
 	{
-		return isInRange(_ch, 'A', 'Z');
+		return _ch >= 'A' && _ch <= 'Z';
 	}
 
 	bool isLower(char _ch)
 	{
-		return isInRange(_ch, 'a', 'z');
+		return _ch >= 'a' && _ch <= 'z';
 	}
 
 	bool isAlpha(char _ch)
@@ -47,7 +42,7 @@ namespace bx
 
 	bool isNumeric(char _ch)
 	{
-		return isInRange(_ch, '0', '9');
+		return _ch >= '0' && _ch <= '9';
 	}
 
 	bool isAlphaNum(char _ch)
@@ -57,7 +52,7 @@ namespace bx
 
 	bool isPrint(char _ch)
 	{
-		return isInRange(_ch, ' ', '~');
+		return isAlphaNum(_ch) || isSpace(_ch);
 	}
 
 	char toLower(char _ch)
@@ -65,37 +60,9 @@ namespace bx
 		return _ch + (isUpper(_ch) ? 0x20 : 0);
 	}
 
-	void toLowerUnsafe(char* _inOutStr, int32_t _len)
-	{
-		for (int32_t ii = 0; ii < _len; ++ii)
-		{
-			*_inOutStr = toLower(*_inOutStr);
-		}
-	}
-
-	void toLower(char* _inOutStr, int32_t _max)
-	{
-		const int32_t len = strLen(_inOutStr, _max);
-		toLowerUnsafe(_inOutStr, len);
-	}
-
 	char toUpper(char _ch)
 	{
 		return _ch - (isLower(_ch) ? 0x20 : 0);
-	}
-
-	void toUpperUnsafe(char* _inOutStr, int32_t _len)
-	{
-		for (int32_t ii = 0; ii < _len; ++ii)
-		{
-			*_inOutStr = toUpper(*_inOutStr);
-		}
-	}
-
-	void toUpper(char* _inOutStr, int32_t _max)
-	{
-		const int32_t len = strLen(_inOutStr, _max);
-		toUpperUnsafe(_inOutStr, len);
 	}
 
 	bool toBool(const char* _str)
@@ -104,18 +71,10 @@ namespace bx
 		return ch == 't' ||  ch == '1';
 	}
 
-	typedef char (*CharFn)(char _ch);
-
-	inline char toNoop(char _ch)
-	{
-		return _ch;
-	}
-
-	template<CharFn fn>
-	int32_t strCmp(const char* _lhs, const char* _rhs, int32_t _max)
+	int32_t strncmp(const char* _lhs, const char* _rhs, size_t _max)
 	{
 		for (
-			; 0 < _max && fn(*_lhs) == fn(*_rhs)
+			; 0 < _max && *_lhs == *_rhs
 			; ++_lhs, ++_rhs, --_max
 			)
 		{
@@ -126,149 +85,62 @@ namespace bx
 			}
 		}
 
-		return 0 == _max ? 0 : fn(*_lhs) - fn(*_rhs);
+		return 0 == _max ? 0 : *_lhs - *_rhs;
 	}
 
-	int32_t strCmp(const char* _lhs, const char* _rhs, int32_t _max)
+	int32_t strincmp(const char* _lhs, const char* _rhs, size_t _max)
 	{
-		return strCmp<toNoop>(_lhs, _rhs, _max);
-	}
-
-	int32_t strCmp(const char* _lhs, const StringView& _rhs)
-	{
-		return strCmp(_lhs, _rhs.getPtr(), _rhs.getLength() );
-	}
-
-	int32_t strCmpI(const char* _lhs, const char* _rhs, int32_t _max)
-	{
-		return strCmp<toLower>(_lhs, _rhs, _max);
-	}
-
-	int32_t strCmpI(const char* _lhs, const StringView& _rhs)
-	{
-		return strCmpI(_lhs, _rhs.getPtr(), _rhs.getLength() );
-	}
-
-	int32_t strCmpV(const char* _lhs, const char* _rhs, int32_t _max)
-	{
-		int32_t ii   = 0;
-		int32_t idx  = 0;
-		bool    zero = true;
-
 		for (
-			; 0 < _max && _lhs[ii] == _rhs[ii]
-			; ++ii, --_max
+			; 0 < _max && toLower(*_lhs) == toLower(*_rhs)
+			; ++_lhs, ++_rhs, --_max
 			)
 		{
-			const uint8_t ch = _lhs[ii];
-			if ('\0' == ch
-			||  '\0' == _rhs[ii])
+			if (*_lhs == '\0'
+			||  *_rhs == '\0')
 			{
 				break;
 			}
-
-			if (!isNumeric(ch) )
-			{
-				idx  = ii+1;
-				zero = true;
-			}
-			else if ('0' != ch)
-			{
-				zero = false;
-			}
 		}
 
-		if (0 == _max)
-		{
-			return 0;
-		}
-
-		if ('0' != _lhs[idx]
-		&&  '0' != _rhs[idx])
-		{
-			int32_t jj = 0;
-			for (jj = ii
-				; 0 < _max && isNumeric(_lhs[jj])
-				; ++jj, --_max
-				)
-			{
-				if (!isNumeric(_rhs[jj]) )
-				{
-					return 1;
-				}
-			}
-
-			if (isNumeric(_rhs[jj]))
-			{
-				return -1;
-			}
-		}
-		else if (zero
-			 &&  idx < ii
-			 && (isNumeric(_lhs[ii]) || isNumeric(_rhs[ii]) ) )
-		{
-			return (_lhs[ii] - '0') - (_rhs[ii] - '0');
-		}
-
-		return 0 == _max ? 0 : _lhs[ii] - _rhs[ii];
+		return 0 == _max ? 0 : *_lhs - *_rhs;
 	}
 
-	int32_t strCmpV(const char* _lhs, const StringView& _rhs)
+	size_t strnlen(const char* _str, size_t _max)
 	{
-		return strCmpV(_lhs, _rhs.getPtr(), _rhs.getLength() );
+		const char* ptr;
+		for (ptr = _str; 0 < _max && *ptr != '\0'; ++ptr, --_max) {};
+		return ptr - _str;
 	}
 
-	int32_t strLen(const char* _str, int32_t _max)
-	{
-		if (NULL == _str)
-		{
-			return 0;
-		}
-
-		const char* ptr = _str;
-		for (; 0 < _max && *ptr != '\0'; ++ptr, --_max) {};
-		return int32_t(ptr - _str);
-	}
-
-	int32_t strCopy(char* _dst, int32_t _dstSize, const char* _src, int32_t _num)
+	size_t strlncpy(char* _dst, size_t _dstSize, const char* _src, size_t _num)
 	{
 		BX_CHECK(NULL != _dst, "_dst can't be NULL!");
 		BX_CHECK(NULL != _src, "_src can't be NULL!");
 		BX_CHECK(0 < _dstSize, "_dstSize can't be 0!");
 
-		const int32_t len = strLen(_src, _num);
-		const int32_t max = _dstSize-1;
-		const int32_t num = (len < max ? len : max);
+		const size_t len = strnlen(_src, _num);
+		const size_t max = _dstSize-1;
+		const size_t num = (len < max ? len : max);
 		memCopy(_dst, _src, num);
 		_dst[num] = '\0';
 
 		return num;
 	}
 
-	int32_t strCopy(char* _dst, int32_t _dstSize, const StringView& _str)
-	{
-		return strCopy(_dst, _dstSize, _str.getPtr(), _str.getLength() );
-	}
-
-	int32_t strCat(char* _dst, int32_t _dstSize, const char* _src, int32_t _num)
+	size_t strlncat(char* _dst, size_t _dstSize, const char* _src, size_t _num)
 	{
 		BX_CHECK(NULL != _dst, "_dst can't be NULL!");
 		BX_CHECK(NULL != _src, "_src can't be NULL!");
 		BX_CHECK(0 < _dstSize, "_dstSize can't be 0!");
 
-		const int32_t max = _dstSize;
-		const int32_t len = strLen(_dst, max);
-		return strCopy(&_dst[len], max-len, _src, _num);
+		const size_t max = _dstSize;
+		const size_t len = strnlen(_dst, max);
+		return strlncpy(&_dst[len], max-len, _src, _num);
 	}
 
-	int32_t strCat(char* _dst, int32_t _dstSize, const StringView& _str)
+	const char* strnchr(const char* _str, char _ch, size_t _max)
 	{
-		return strCat(_dst, _dstSize, _str.getPtr(), _str.getLength() );
-	}
-
-	const char* strFind(const char* _str, char _ch, int32_t _max)
-	{
-		for (int32_t ii = 0, len = strLen(_str, _max); ii < len; ++ii)
+		for (size_t ii = 0, len = strnlen(_str, _max); ii < len; ++ii)
 		{
 			if (_str[ii] == _ch)
 			{
@@ -279,9 +151,9 @@ namespace bx
 		return NULL;
 	}
 
-	const char* strRFind(const char* _str, char _ch, int32_t _max)
+	const char* strnrchr(const char* _str, char _ch, size_t _max)
 	{
-		for (int32_t ii = strLen(_str, _max); 0 <= ii; --ii)
+		for (size_t ii = strnlen(_str, _max); 0 < ii; --ii)
 		{
 			if (_str[ii] == _ch)
 			{
@@ -292,18 +164,17 @@ namespace bx
 		return NULL;
 	}
 
-	template<CharFn fn>
-	static const char* strStr(const char* _str, int32_t _strMax, const char* _find, int32_t _findMax)
+	const char* strnstr(const char* _str, const char* _find, size_t _max)
 	{
 		const char* ptr = _str;
 
-		int32_t       stringLen = strLen(_str,  _strMax);
-		const int32_t findLen   = strLen(_find, _findMax);
+		size_t       stringLen = strnlen(_str, _max);
+		const size_t findLen   = strnlen(_find);
 
 		for (; stringLen >= findLen; ++ptr, --stringLen)
 		{
 			// Find start of the string.
-			while (fn(*ptr) != fn(*_find) )
+			while (*ptr != *_find)
 			{
 				++ptr;
 				--stringLen;
@@ -320,7 +191,7 @@ namespace bx
 			const char* search = _find;
 
 			// Start comparing.
-			while (fn(*string++) == fn(*search++) )
+			while (*string++ == *search++)
 			{
 				// If end of the 'search' string is reached, all characters match.
 				if ('\0' == *search)
@@ -333,27 +204,57 @@ namespace bx
 		return NULL;
 	}
 
-	const char* strFind(const char* _str, const char* _find, int32_t _max)
+	const char* stristr(const char* _str, const char* _find, size_t _max)
 	{
-		return strStr<toNoop>(_str, _max, _find, INT32_MAX);
-	}
+		const char* ptr = _str;
 
-	const char* strFindI(const char* _str, const char* _find, int32_t _max)
-	{
-		return strStr<toLower>(_str, _max, _find, INT32_MAX);
+		size_t       stringLen = strnlen(_str, _max);
+		const size_t findLen   = strnlen(_find);
+
+		for (; stringLen >= findLen; ++ptr, --stringLen)
+		{
+			// Find start of the string.
+			while (toLower(*ptr) != toLower(*_find) )
+			{
+				++ptr;
+				--stringLen;
+
+				// Search pattern lenght can't be longer than the string.
+				if (findLen > stringLen)
+				{
+					return NULL;
+				}
+			}
+
+			// Set pointers.
+			const char* string = ptr;
+			const char* search = _find;
+
+			// Start comparing.
+			while (toLower(*string++) == toLower(*search++) )
+			{
+				// If end of the 'search' string is reached, all characters match.
+				if ('\0' == *search)
+				{
+					return ptr;
+				}
+			}
+		}
+
+		return NULL;
 	}
 
 	const char* strnl(const char* _str)
 	{
-		for (; '\0' != *_str; _str += strLen(_str, 1024) )
+		for (; '\0' != *_str; _str += strnlen(_str, 1024) )
 		{
-			const char* eol = strFind(_str, "\r\n", 1024);
+			const char* eol = strnstr(_str, "\r\n", 1024);
 			if (NULL != eol)
 			{
 				return eol + 2;
 			}
 
-			eol = strFind(_str, "\n", 1024);
+			eol = strnstr(_str, "\n", 1024);
 			if (NULL != eol)
 			{
 				return eol + 1;
@@ -365,15 +266,15 @@ namespace bx
 
 	const char* streol(const char* _str)
 	{
-		for (; '\0' != *_str; _str += strLen(_str, 1024) )
+		for (; '\0' != *_str; _str += strnlen(_str, 1024) )
 		{
-			const char* eol = strFind(_str, "\r\n", 1024);
+			const char* eol = strnstr(_str, "\r\n", 1024);
 			if (NULL != eol)
 			{
 				return eol;
 			}
 
-			eol = strFind(_str, "\n", 1024);
+			eol = strnstr(_str, "\n", 1024);
 			if (NULL != eol)
 			{
 				return eol;
@@ -423,7 +324,7 @@ namespace bx
 		return NULL;
 	}
 
-	void eolLF(char* _out, int32_t _size, const char* _str)
+	void eolLF(char* _out, size_t _size, const char* _str)
 	{
 		if (0 < _size)
 		{
@@ -442,9 +343,9 @@ namespace bx
 
 	const char* findIdentifierMatch(const char* _str, const char* _word)
 	{
-		int32_t len = strLen(_word);
-		const char* ptr = strFind(_str, _word);
-		for (; NULL != ptr; ptr = strFind(ptr + len, _word) )
+		size_t len = strnlen(_word);
+		const char* ptr = strnstr(_str, _word);
+		for (; NULL != ptr; ptr = strnstr(ptr + len, _word) )
 		{
 			if (ptr != _str)
 			{
@@ -481,418 +382,9 @@ namespace bx
 		return NULL;
 	}
 
-	namespace
-	{
-		struct Param
-		{
-			Param()
-				: width(0)
-				, base(10)
-				, prec(6)
-				, fill(' ')
-				, bits(0)
-				, left(false)
-				, upper(false)
-				, spec(false)
-				, sign(false)
-			{
-			}
+	int32_t write(WriterI* _writer, const char* _format, va_list _argList, Error* _err);
 
-			int32_t width;
-			uint32_t base;
-			uint32_t prec;
-			char fill;
-			uint8_t bits;
-			bool left;
-			bool upper;
-			bool spec;
-			bool sign;
-		};
-
-		static int32_t write(WriterI* _writer, const char* _str, int32_t _len, const Param& _param, Error* _err)
-		{
-			int32_t size = 0;
-			int32_t len = (int32_t)strLen(_str, _len);
-			int32_t padding = _param.width > len ? _param.width - len : 0;
-			bool sign = _param.sign && len > 1 && _str[0] != '-';
-			padding = padding > 0 ? padding - sign : 0;
-
-			if (!_param.left)
-			{
-				size += writeRep(_writer, _param.fill, padding, _err);
-			}
-
-			if (NULL == _str)
-			{
-				size += write(_writer, "(null)", 6, _err);
-			}
-			else if (_param.upper)
-			{
-				for (int32_t ii = 0; ii < len; ++ii)
-				{
-					size += write(_writer, toUpper(_str[ii]), _err);
-				}
-			}
-			else if (sign)
-			{
-				size += write(_writer, '+', _err);
-				size += write(_writer, _str, len, _err);
-			}
-			else
-			{
-				size += write(_writer, _str, len, _err);
-			}
-
-			if (_param.left)
-			{
-				size += writeRep(_writer, _param.fill, padding, _err);
-			}
-
-			return size;
-		}
-
-		static int32_t write(WriterI* _writer, char _ch, const Param& _param, Error* _err)
-		{
-			return write(_writer, &_ch, 1, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, const char* _str, const Param& _param, Error* _err)
-		{
-			return write(_writer, _str, INT32_MAX, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, int32_t _i, const Param& _param, Error* _err)
-		{
-			char str[33];
-			int32_t len = toString(str, sizeof(str), _i, _param.base);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			return write(_writer, str, len, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, int64_t _i, const Param& _param, Error* _err)
-		{
-			char str[33];
-			int32_t len = toString(str, sizeof(str), _i, _param.base);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			return write(_writer, str, len, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, uint32_t _u, const Param& _param, Error* _err)
-		{
-			char str[33];
-			int32_t len = toString(str, sizeof(str), _u, _param.base);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			return write(_writer, str, len, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, uint64_t _u, const Param& _param, Error* _err)
-		{
-			char str[33];
-			int32_t len = toString(str, sizeof(str), _u, _param.base);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			return write(_writer, str, len, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, double _d, const Param& _param, Error* _err)
-		{
-			char str[1024];
-			int32_t len = toString(str, sizeof(str), _d);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			if (_param.upper)
-			{
-				toUpperUnsafe(str, len);
-			}
-
-			const char* dot = strFind(str, '.');
-			if (NULL != dot)
-			{
-				const int32_t precLen = int32_t(
-						dot
-						+ uint32_min(_param.prec + _param.spec, 1)
-						+ _param.prec
-						- str
-						);
-				if (precLen > len)
-				{
-					for (int32_t ii = len; ii < precLen; ++ii)
-					{
-						str[ii] = '0';
-					}
-					str[precLen] = '\0';
-				}
-				len = precLen;
-			}
-
-			return write(_writer, str, len, _param, _err);
-		}
-
-		static int32_t write(WriterI* _writer, const void* _ptr, const Param& _param, Error* _err)
-		{
-			char str[35] = "0x";
-			int32_t len = toString(str + 2, sizeof(str) - 2, uint32_t(uintptr_t(_ptr) ), 16);
-
-			if (len == 0)
-			{
-				return 0;
-			}
-
-			len += 2;
-			return write(_writer, str, len, _param, _err);
-		}
-	} // anonymous namespace
-
-	int32_t write(WriterI* _writer, const char* _format, va_list _argList, Error* _err)
-	{
-		MemoryReader reader(_format, uint32_t(strLen(_format) ) );
-
-		int32_t size = 0;
-
-		while (_err->isOk() )
-		{
-			char ch = '\0';
-
-			Error err;
-			read(&reader, ch, &err);
-
-			if (!_err->isOk()
-			||  !err.isOk() )
-			{
-				break;
-			}
-			else if ('%' == ch)
-			{
-				// %[flags][width][.precision][length sub-specifier]specifier
-				read(&reader, ch);
-
-				Param param;
-
-				// flags
-				while (' ' == ch
-				||     '-' == ch
-				||     '+' == ch
-				||     '0' == ch
-				||     '#' == ch)
-				{
-					switch (ch)
-					{
-						default:
-						case ' ': param.fill = ' ';  break;
-						case '-': param.left = true; break;
-						case '+': param.sign = true; break;
-						case '0': param.fill = '0';  break;
-						case '#': param.spec = true; break;
-					}
-
-					read(&reader, ch);
-				}
-
-				if (param.left)
-				{
-					param.fill = ' ';
-				}
-
-				// width
-				if ('*' == ch)
-				{
-					read(&reader, ch);
-					param.width = va_arg(_argList, int32_t);
-
-					if (0 > param.width)
-					{
-						param.left  = true;
-						param.width = -param.width;
-					}
-
-				}
-				else
-				{
-					while (isNumeric(ch) )
-					{
-						param.width = param.width * 10 + ch - '0';
-						read(&reader, ch);
-					}
-				}
-
-				// .precision
-				if ('.' == ch)
-				{
-					read(&reader, ch);
-
-					if ('*' == ch)
-					{
-						read(&reader, ch);
-						param.prec = va_arg(_argList, int32_t);
-					}
-					else
-					{
-						param.prec = 0;
-						while (isNumeric(ch) )
-						{
-							param.prec = param.prec * 10 + ch - '0';
-							read(&reader, ch);
-						}
-					}
-				}
-
-				// length sub-specifier
-				while ('h' == ch
-				||     'I' == ch
-				||     'l' == ch
-				||     'j' == ch
-				||     't' == ch
-				||     'z' == ch)
-				{
-					switch (ch)
-					{
-						default: break;
-
-						case 'j': param.bits = sizeof(intmax_t )*8; break;
-						case 't': param.bits = sizeof(size_t   )*8; break;
-						case 'z': param.bits = sizeof(ptrdiff_t)*8; break;
-
-						case 'h': case 'I': case 'l':
-							switch (ch)
-							{
-								case 'h': param.bits = sizeof(short int)*8; break;
-								case 'l': param.bits = sizeof(long int )*8; break;
-								default: break;
-							}
-
-							read(&reader, ch);
-							switch (ch)
-							{
-								case 'h': param.bits = sizeof(signed char  )*8; break;
-								case 'l': param.bits = sizeof(long long int)*8; break;
-								case '3':
-								case '6':
-									read(&reader, ch);
-									switch (ch)
-									{
-										case '2': param.bits = sizeof(int32_t)*8; break;
-										case '4': param.bits = sizeof(int64_t)*8; break;
-										default: break;
-									}
-									break;
-
-								default: seek(&reader, -1); break;
-							}
-							break;
-					}
-
-					read(&reader, ch);
-				}
-
-				// specifier
-				switch (toLower(ch) )
-				{
-					case 'c':
-						size += write(_writer, char(va_arg(_argList, int32_t) ), param, _err);
-						break;
-
-					case 's':
-						size += write(_writer, va_arg(_argList, const char*), param, _err);
-						break;
-
-					case 'o':
-						param.base = 8;
-						switch (param.bits)
-						{
-						default: size += write(_writer, va_arg(_argList, int32_t), param, _err); break;
-						case 64: size += write(_writer, va_arg(_argList, int64_t), param, _err); break;
-						}
-						break;
-
-					case 'i':
-					case 'd':
-						param.base = 10;
-						switch (param.bits)
-						{
-						default: size += write(_writer, va_arg(_argList, int32_t), param, _err); break;
-						case 64: size += write(_writer, va_arg(_argList, int64_t), param, _err); break;
-						};
-						break;
-
-					case 'e':
-					case 'f':
-					case 'g':
-						param.upper = isUpper(ch);
-						size += write(_writer, va_arg(_argList, double), param, _err);
-						break;
-
-					case 'p':
-						size += write(_writer, va_arg(_argList, void*), param, _err);
-						break;
-
-					case 'x':
-						param.base  = 16;
-						param.upper = isUpper(ch);
-						switch (param.bits)
-						{
-						default: size += write(_writer, va_arg(_argList, uint32_t), param, _err); break;
-						case 64: size += write(_writer, va_arg(_argList, uint64_t), param, _err); break;
-						}
-						break;
-
-					case 'u':
-						param.base = 10;
-						switch (param.bits)
-						{
-						default: size += write(_writer, va_arg(_argList, uint32_t), param, _err); break;
-						case 64: size += write(_writer, va_arg(_argList, uint64_t), param, _err); break;
-						}
-						break;
-
-					default:
-						size += write(_writer, ch, _err);
-						break;
-				}
-			}
-			else
-			{
-				size += write(_writer, ch, _err);
-			}
-		}
-
-		size += write(_writer, '\0', _err);
-
-		return size;
-	}
-
-	int32_t write(WriterI* _writer, Error* _err, const char* _format, ...)
-	{
-		va_list argList;
-		va_start(argList, _format);
-		int32_t total = write(_writer, _format, argList, _err);
-		va_end(argList);
-		return total;
-	}
-
-	int32_t vsnprintfRef(char* _out, int32_t _max, const char* _format, va_list _argList)
+	int32_t vsnprintfRef(char* _out, size_t _max, const char* _format, va_list _argList)
 	{
 		if (1 < _max)
 		{
@@ -921,13 +413,10 @@ namespace bx
 		return size - 1 /* size without '\0' terminator */;
 	}
 
-	int32_t vsnprintf(char* _out, int32_t _max, const char* _format, va_list _argList)
+	int32_t vsnprintf(char* _out, size_t _max, const char* _format, va_list _argList)
 	{
-		va_list argList;
-		va_copy(argList, _argList);
-		int32_t total = 0;
 #if BX_CRT_NONE
-		total = vsnprintfRef(_out, _max, _format, argList);
+		return vsnprintfRef(_out, _max, _format, _argList);
 #elif BX_CRT_MSVC
 		int32_t len = -1;
 		if (NULL != _out)
@@ -937,30 +426,26 @@ namespace bx
 			len = ::vsnprintf_s(_out, _max, size_t(-1), _format, argListCopy);
 			va_end(argListCopy);
 		}
-		total = -1 == len ? ::_vscprintf(_format, argList) : len;
+		return -1 == len ? ::_vscprintf(_format, _argList) : len;
 #else
-		total = ::vsnprintf(_out, _max, _format, argList);
+		return ::vsnprintf(_out, _max, _format, _argList);
 #endif // BX_COMPILER_MSVC
-		va_end(argList);
-		return total;
 	}
 
-	int32_t snprintf(char* _out, int32_t _max, const char* _format, ...)
+	int32_t snprintf(char* _out, size_t _max, const char* _format, ...)
 	{
 		va_list argList;
 		va_start(argList, _format);
-		int32_t total = vsnprintf(_out, _max, _format, argList);
+		int32_t len = vsnprintf(_out, _max, _format, argList);
 		va_end(argList);
-		return total;
+		return len;
 	}
 
-	int32_t vsnwprintf(wchar_t* _out, int32_t _max, const wchar_t* _format, va_list _argList)
+	int32_t vsnwprintf(wchar_t* _out, size_t _max, const wchar_t* _format, va_list _argList)
 	{
-		va_list argList;
-		va_copy(argList, _argList);
-		int32_t total = 0;
 #if BX_CRT_NONE
-		BX_UNUSED(_out, _max, _format, argList);
+		BX_UNUSED(_out, _max, _format, _argList);
+		return 0;
 #elif BX_CRT_MSVC
 		int32_t len = -1;
 		if (NULL != _out)
@@ -970,17 +455,15 @@ namespace bx
 			len = ::_vsnwprintf_s(_out, _max, size_t(-1), _format, argListCopy);
 			va_end(argListCopy);
 		}
-		total = -1 == len ? ::_vscwprintf(_format, _argList) : len;
+		return -1 == len ? ::_vscwprintf(_format, _argList) : len;
 #elif BX_CRT_MINGW
-		total = ::vsnwprintf(_out, _max, _format, argList);
+		return ::vsnwprintf(_out, _max, _format, _argList);
 #else
-		total = ::vswprintf(_out, _max, _format, argList);
+		return ::vswprintf(_out, _max, _format, _argList);
 #endif // BX_COMPILER_MSVC
-		va_end(argList);
-		return total;
 	}
 
-	int32_t swnprintf(wchar_t* _out, int32_t _max, const wchar_t* _format, ...)
+	int32_t swnprintf(wchar_t* _out, size_t _max, const wchar_t* _format, ...)
 	{
 		va_list argList;
 		va_start(argList, _format);
@@ -989,36 +472,44 @@ namespace bx
 		return len;
 	}
 
-	static const char s_units[] = { 'B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
+	const char* baseName(const char* _filePath)
+	{
+		const char* bs       = strnrchr(_filePath, '\\');
+		const char* fs       = strnrchr(_filePath, '/');
+		const char* slash    = (bs > fs ? bs : fs);
+		const char* colon    = strnrchr(_filePath, ':');
+		const char* basename = slash > colon ? slash : colon;
+		if (NULL != basename)
+		{
+			return basename+1;
+		}
 
-	template<uint32_t Kilo, char KiloCh0, char KiloCh1>
-	static int32_t prettify(char* _out, int32_t _count, uint64_t _size)
+		return _filePath;
+	}
+
+	void prettify(char* _out, size_t _count, uint64_t _size)
 	{
 		uint8_t idx = 0;
 		double size = double(_size);
 		while (_size != (_size&0x7ff)
-		&&     idx < BX_COUNTOF(s_units) )
+		&&     idx < 9)
 		{
-			_size /= Kilo;
-			size  *= 1.0/double(Kilo);
+			_size >>= 10;
+			size *= 1.0/1024.0;
 			++idx;
 		}
 
-		return snprintf(_out, _count, "%0.2f %c%c%c", size
-			, s_units[idx]
-			, idx > 0 ? KiloCh0 : '\0'
-			, KiloCh1
-			);
+		snprintf(_out, _count, "%0.2f %c%c", size, "BkMGTPEZY"[idx], idx > 0 ? 'B' : '\0');
 	}
 
-	int32_t prettify(char* _out, int32_t _count, uint64_t _size, Units::Enum _units)
+	size_t strlcpy(char* _dst, const char* _src, size_t _max)
 	{
-		if (Units::Kilo == _units)
-		{
-			return prettify<1000, 'B', '\0'>(_out, _count, _size);
-		}
+		return strlncpy(_dst, _max, _src);
+	}
 
-		return prettify<1024, 'i', 'B'>(_out, _count, _size);
+	size_t strlcat(char* _dst, const char* _src, size_t _max)
+	{
+		return strlncat(_dst, _max, _src);
 	}
 
 } // namespace bx

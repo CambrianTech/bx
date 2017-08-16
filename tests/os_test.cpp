@@ -5,8 +5,6 @@
 
 #include "test.h"
 #include <bx/os.h>
-#include <bx/semaphore.h>
-#include <bx/timer.h>
 
 TEST_CASE("getProcessMemoryUsed", "")
 {
@@ -14,17 +12,9 @@ TEST_CASE("getProcessMemoryUsed", "")
 //	DBG("bx::getProcessMemoryUsed %d", bx::getProcessMemoryUsed() );
 }
 
-#if !BX_PLATFORM_OSX
-TEST_CASE("semaphore_timeout", "")
+TEST_CASE("getTempPath", "")
 {
-	bx::Semaphore sem;
-
-	int64_t start = bx::getHPCounter();
-	bool ok = sem.wait(900);
-	int64_t elapsed = bx::getHPCounter() - start;
-	int64_t frequency = bx::getHPFrequency();
-	double ms = double(elapsed) / double(frequency) * 1000;
-	printf("%f\n", ms);
-	REQUIRE(!ok);
+	char tmpDir[512];
+	uint32_t len = BX_COUNTOF(tmpDir);
+	REQUIRE(bx::getTempPath(tmpDir, &len) );
 }
-#endif // !BX_PLATFORM_OSX
