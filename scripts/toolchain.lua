@@ -4,7 +4,43 @@
 --
 
 local bxDir = path.getabsolute("..")
-local naclToolchain = ""
+
+local function crtNone()
+
+	defines {
+		"BX_CRT_NONE=1",
+	}
+
+	buildoptions {
+		"-nostdlib",
+		"-nodefaultlibs",
+		"-nostartfiles",
+		"-Wa,--noexecstack",
+		"-ffreestanding",
+	}
+
+	linkoptions {
+		"-nostdlib",
+		"-nodefaultlibs",
+		"-nostartfiles",
+		"-Wa,--noexecstack",
+		"-ffreestanding",
+	}
+
+	configuration { "linux-*" }
+
+		buildoptions {
+			"-mpreferred-stack-boundary=4",
+			"-mstackrealign",
+		}
+
+		linkoptions {
+			"-mpreferred-stack-boundary=4",
+			"-mstackrealign",
+		}
+
+	configuration {}
+end
 
 function toolchain(_buildDir, _libDir)
 
@@ -35,11 +71,8 @@ function toolchain(_buildDir, _libDir)
 			{ "tvos-simulator",  "tvOS - Simulator"           },
 			{ "mingw-gcc",       "MinGW"                      },
 			{ "mingw-clang",     "MinGW (clang compiler)"     },
-			{ "nacl",            "Native Client"              },
-			{ "nacl-arm",        "Native Client - ARM"        },
 			{ "netbsd",          "NetBSD"                     },
 			{ "osx",             "OSX"                        },
-			{ "pnacl",           "Native Client - PNaCl"      },
 			{ "orbis",           "Orbis"                      },
 			{ "qnx-arm",         "QNX/Blackberry - ARM"       },
 			{ "riscv",           "RISC-V"                     },
@@ -101,7 +134,7 @@ function toolchain(_buildDir, _libDir)
 	newoption {
 		trigger = "with-windows",
 		value = "#",
-		description = "Set the Windows target platform version (default: 10.0.10240.0).",
+		description = "Set the Windows target platform version (default: $WindowsSDKVersion or 8.1).",
 	}
 
 	newoption {
@@ -145,7 +178,7 @@ function toolchain(_buildDir, _libDir)
 		tvosPlatform = _OPTIONS["with-tvos"]
 	end
 
-	local windowsPlatform = "10.0.10240.0"
+	local windowsPlatform = string.gsub(os.getenv("WindowsSDKVersion") or "8.1", "\\", "")
 	if _OPTIONS["with-windows"] then
 		windowsPlatform = _OPTIONS["with-windows"]
 	end
@@ -154,6 +187,10 @@ function toolchain(_buildDir, _libDir)
 	if _OPTIONS["with-32bit-compiler"] then
 		compiler32bit = true
 	end
+
+	flags {
+		"ExtraWarnings",
+	}
 
 	if _ACTION == "gmake" or _ACTION == "ninja" then
 
@@ -172,12 +209,13 @@ function toolchain(_buildDir, _libDir)
 			if not os.getenv("ANDROID_NDK_ARM")
 			or not os.getenv("ANDROID_NDK_CLANG")
 			or not os.getenv("ANDROID_NDK_ROOT") then
-				print("Set ANDROID_NDK_CLANG and ANDROID_NDK_ROOT envrionment variables.")
+				print("Set ANDROID_NDK_CLANG, ANDROID_NDK_ARM, and ANDROID_NDK_ROOT environment variables.")
 			end
 
 			premake.gcc.cc   = "$(ANDROID_NDK_CLANG)/bin/clang"
 			premake.gcc.cxx  = "$(ANDROID_NDK_CLANG)/bin/clang++"
-			premake.gcc.ar  = "$(ANDROID_NDK_CLANG)/bin/llvm-ar"
+			premake.gcc.ar   = "$(ANDROID_NDK_ARM)/bin/arm-linux-androideabi-ar"
+
 			premake.gcc.llvm = true
 			location (path.join(_buildDir, "projects", _ACTION .. "-" .. _OPTIONS["gcc"]))
 
@@ -186,7 +224,7 @@ function toolchain(_buildDir, _libDir)
 			if not os.getenv("ANDROID_NDK_MIPS")
 			or not os.getenv("ANDROID_NDK_CLANG")
 			or not os.getenv("ANDROID_NDK_ROOT") then
-				print("Set ANDROID_NDK_MIPS and ANDROID_NDK_ROOT envrionment variables.")
+				print("Set ANDROID_NDK_CLANG, ANDROID_NDK_ARM, and ANDROID_NDK_ROOT environment variables.")
 			end
 
 			premake.gcc.cc   = "$(ANDROID_NDK_CLANG)/bin/clang"
@@ -199,7 +237,7 @@ function toolchain(_buildDir, _libDir)
 			if not os.getenv("ANDROID_NDK_X86")
 			or not os.getenv("ANDROID_NDK_CLANG")
 			or not os.getenv("ANDROID_NDK_ROOT") then
-				print("Set ANDROID_NDK_X86 and ANDROID_NDK_ROOT envrionment variables.")
+				print("Set ANDROID_NDK_CLANG, ANDROID_NDK_ARM, and ANDROID_NDK_ROOT environment variables.")
 			end
 
 			premake.gcc.cc   = "$(ANDROID_NDK_CLANG)/bin/clang"
@@ -210,7 +248,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "asmjs" == _OPTIONS["gcc"] then
 
 			if not os.getenv("EMSCRIPTEN") then
-				print("Set EMSCRIPTEN enviroment variable.")
+				print("Set EMSCRIPTEN environment variable.")
 			end
 
 			premake.gcc.cc   = "\"$(EMSCRIPTEN)/emcc\""
@@ -284,7 +322,7 @@ function toolchain(_buildDir, _libDir)
 
 		elseif "linux-steamlink" == _OPTIONS["gcc"] then
 			if not os.getenv("MARVELL_SDK_PATH") then
-				print("Set MARVELL_SDK_PATH enviroment variable.")
+				print("Set MARVELL_SDK_PATH environment variable.")
 			end
 
 			premake.gcc.cc  = "$(MARVELL_SDK_PATH)/toolchain/bin/armv7a-cros-linux-gnueabi-gcc"
@@ -293,6 +331,10 @@ function toolchain(_buildDir, _libDir)
 			location (path.join(_buildDir, "projects", _ACTION .. "-linux-steamlink"))
 
 		elseif "mingw-gcc" == _OPTIONS["gcc"] then
+			if not os.getenv("MINGW") then
+				print("Set MINGW environment variable.")
+			end
+
 			local mingwToolchain = "x86_64-w64-mingw32"
 			if compiler32bit then
 				if os.is("linux") then
@@ -315,42 +357,6 @@ function toolchain(_buildDir, _libDir)
 --			premake.gcc.llvm = true
 			location (path.join(_buildDir, "projects", _ACTION .. "-mingw-clang"))
 
-		elseif "nacl" == _OPTIONS["gcc"] then
-
-			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variable.")
-			end
-
-			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_x86_glibc/bin/x86_64-nacl-"
-			if os.is("macosx") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/mac_x86_glibc/bin/x86_64-nacl-"
-			elseif os.is("linux") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc/bin/x86_64-nacl-"
-			end
-
-			premake.gcc.cc  = naclToolchain .. "gcc"
-			premake.gcc.cxx = naclToolchain .. "g++"
-			premake.gcc.ar  = naclToolchain .. "ar"
-			location (path.join(_buildDir, "projects", _ACTION .. "-nacl"))
-
-		elseif "nacl-arm" == _OPTIONS["gcc"] then
-
-			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variable.")
-			end
-
-			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_arm_glibc/bin/arm-nacl-"
-			if os.is("macosx") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/mac_arm_glibc/bin/arm-nacl-"
-			elseif os.is("linux") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/linux_arm_glibc/bin/arm-nacl-"
-			end
-
-			premake.gcc.cc  = naclToolchain .. "gcc"
-			premake.gcc.cxx = naclToolchain .. "g++"
-			premake.gcc.ar  = naclToolchain .. "ar"
-			location (path.join(_buildDir, "projects", _ACTION .. "-nacl-arm"))
-
 		elseif "netbsd" == _OPTIONS["gcc"] then
 			location (path.join(_buildDir, "projects", _ACTION .. "-netbsd"))
 
@@ -358,7 +364,7 @@ function toolchain(_buildDir, _libDir)
 
 			if os.is("linux") then
 				if not os.getenv("OSXCROSS") then
-					print("Set OSXCROSS enviroment variable.")
+					print("Set OSXCROSS environment variable.")
 				end
 
 				local osxToolchain = "x86_64-apple-darwin15-"
@@ -368,28 +374,10 @@ function toolchain(_buildDir, _libDir)
 			end
 			location (path.join(_buildDir, "projects", _ACTION .. "-osx"))
 
-		elseif "pnacl" == _OPTIONS["gcc"] then
-
-			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variable.")
-			end
-
-			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_pnacl/bin/pnacl-"
-			if os.is("macosx") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/mac_pnacl/bin/pnacl-"
-			elseif os.is("linux") then
-				naclToolchain = "$(NACL_SDK_ROOT)/toolchain/linux_pnacl/bin/pnacl-"
-			end
-
-			premake.gcc.cc  = naclToolchain .. "clang"
-			premake.gcc.cxx = naclToolchain .. "clang++"
-			premake.gcc.ar  = naclToolchain .. "ar"
-			location (path.join(_buildDir, "projects", _ACTION .. "-pnacl"))
-
 		elseif "orbis" == _OPTIONS["gcc"] then
 
 			if not os.getenv("SCE_ORBIS_SDK_DIR") then
-				print("Set SCE_ORBIS_SDK_DIR enviroment variable.")
+				print("Set SCE_ORBIS_SDK_DIR environment variable.")
 			end
 
 			orbisToolchain = "$(SCE_ORBIS_SDK_DIR)/host_tools/bin/orbis-"
@@ -402,7 +390,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "qnx-arm" == _OPTIONS["gcc"] then
 
 			if not os.getenv("QNX_HOST") then
-				print("Set QNX_HOST enviroment variable.")
+				print("Set QNX_HOST environment variable.")
 			end
 
 			premake.gcc.cc  = "$(QNX_HOST)/usr/bin/arm-unknown-nto-qnx8.0.0eabi-gcc"
@@ -425,6 +413,10 @@ function toolchain(_buildDir, _libDir)
 		or _ACTION == "vs2015"
 		or _ACTION == "vs2017"
 		then
+
+		local action = premake.action.current()
+		action.vstudio.windowsTargetPlatformVersion    = windowsPlatform
+		action.vstudio.windowsTargetPlatformMinVersion = windowsPlatform
 
 		if (_ACTION .. "-clang") == _OPTIONS["vs"] then
 			if "vs2017-clang" == _OPTIONS["vs"] then
@@ -456,10 +448,6 @@ function toolchain(_buildDir, _libDir)
 			premake.vstudio.toolset = "v140"
 			premake.vstudio.storeapp = "8.2"
 
-			local action = premake.action.current()
-			action.vstudio.windowsTargetPlatformVersion = windowsPlatform
-			action.vstudio.windowsTargetPlatformMinVersion = windowsPlatform
-
 			platforms { "ARM" }
 			location (path.join(_buildDir, "projects", _ACTION .. "-winstore82"))
 
@@ -475,13 +463,11 @@ function toolchain(_buildDir, _libDir)
 		elseif "orbis" == _OPTIONS["vs"] then
 
 			if not os.getenv("SCE_ORBIS_SDK_DIR") then
-				print("Set SCE_ORBIS_SDK_DIR enviroment variable.")
+				print("Set SCE_ORBIS_SDK_DIR environment variable.")
 			end
 
 			platforms { "Orbis" }
 			location (path.join(_buildDir, "projects", _ACTION .. "-orbis"))
-
-		end
 
 		elseif ("vs2012-xp") == _OPTIONS["vs"] then
 			premake.vstudio.toolset = ("v110_xp")
@@ -499,6 +485,8 @@ function toolchain(_buildDir, _libDir)
 			premake.vstudio.toolset = ("v141_xp")
 			location (path.join(_buildDir, "projects", _ACTION .. "-xp"))
 
+		end
+			
 	elseif _ACTION == "xcode4" then
 
 		if "osx" == _OPTIONS["xcode"] then
@@ -521,6 +509,10 @@ function toolchain(_buildDir, _libDir)
 
 	if _OPTIONS["with-avx"] then
 		flags { "EnableAVX" }
+	end
+
+	if _OPTIONS["with-crtnone"] then
+		crtNone()
 	end
 
 	flags {
@@ -743,6 +735,7 @@ function toolchain(_buildDir, _libDir)
 			"-msse2",
 			"-Wunused-value",
 			"-Wundef",
+			"-Wno-strict-overflow",
 		}
 		buildoptions_cpp {
 			"-std=c++11",
@@ -986,9 +979,13 @@ function toolchain(_buildDir, _libDir)
 		libdirs { path.join(_libDir, "lib/asmjs") }
 		buildoptions {
 			"-i\"system$(EMSCRIPTEN)/system/include\"",
+			"-i\"system$(EMSCRIPTEN)/system/include/libcxx\"",
 			"-i\"system$(EMSCRIPTEN)/system/include/libc\"",
 			"-Wunused-value",
 			"-Wundef",
+		}
+		buildoptions_cpp {
+			"-std=c++11",
 		}
 
 	configuration { "freebsd" }
@@ -998,83 +995,6 @@ function toolchain(_buildDir, _libDir)
 		includedirs {
 			path.join(bxDir, "include/compat/freebsd"),
 		}
-
-	configuration { "nacl or nacl-arm or pnacl" }
-		buildoptions {
-			"-U__STRICT_ANSI__", -- strcasecmp, setenv, unsetenv,...
-			"-fno-stack-protector",
-			"-fdiagnostics-show-option",
-			"-fdata-sections",
-			"-ffunction-sections",
-			"-Wunused-value",
-			"-Wundef",
-		}
-		buildoptions_cpp {
-			"-std=c++11",
-		}
-		includedirs {
-			"$(NACL_SDK_ROOT)/include",
-			path.join(bxDir, "include/compat/nacl"),
-		}
-
-	configuration { "nacl" }
-		buildoptions {
-			"-pthread",
-			"-mfpmath=sse", -- force SSE to get 32-bit and 64-bit builds deterministic.
-			"-msse2",
-		}
-		linkoptions {
-			"-Wl,--gc-sections",
-		}
-
-	configuration { "x32", "nacl" }
-		targetdir (path.join(_buildDir, "nacl-x86/bin"))
-		objdir (path.join(_buildDir, "nacl-x86/obj"))
-		libdirs { path.join(_libDir, "lib/nacl-x86") }
-		linkoptions { "-melf32_nacl" }
-
-	configuration { "x32", "nacl", "Debug" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_x86_32/Debug" }
-
-	configuration { "x32", "nacl", "Release" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_x86_32/Release" }
-
-	configuration { "x64", "nacl" }
-		targetdir (path.join(_buildDir, "nacl-x64/bin"))
-		objdir (path.join(_buildDir, "nacl-x64/obj"))
-		libdirs { path.join(_libDir, "lib/nacl-x64") }
-		linkoptions { "-melf64_nacl" }
-
-	configuration { "x64", "nacl", "Debug" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_x86_64/Debug" }
-
-	configuration { "x64", "nacl", "Release" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_x86_64/Release" }
-
-	configuration { "nacl-arm" }
-		buildoptions {
-			"-Wno-psabi", -- note: the mangling of 'va_list' has changed in GCC 4.4.0
-		}
-		targetdir (path.join(_buildDir, "nacl-arm/bin"))
-		objdir (path.join(_buildDir, "nacl-arm/obj"))
-		libdirs { path.join(_libDir, "lib/nacl-arm") }
-
-	configuration { "nacl-arm", "Debug" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_arm/Debug" }
-
-	configuration { "nacl-arm", "Release" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/glibc_arm/Release" }
-
-	configuration { "pnacl" }
-		targetdir (path.join(_buildDir, "pnacl/bin"))
-		objdir (path.join(_buildDir, "pnacl/obj"))
-		libdirs { path.join(_libDir, "lib/pnacl") }
-
-	configuration { "pnacl", "Debug" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/pnacl/Debug" }
-
-	configuration { "pnacl", "Release" }
-		libdirs { "$(NACL_SDK_ROOT)/lib/pnacl/Release" }
 
 	configuration { "xbox360" }
 		targetdir (path.join(_buildDir, "xbox360/bin"))
@@ -1127,6 +1047,9 @@ function toolchain(_buildDir, _libDir)
 		buildoptions_cpp {
 			"-std=c++11",
 		}
+		buildoptions_objcpp {
+			"-std=c++11",
+		}
 		buildoptions {
 			"-Wfatal-errors",
 			"-msse2",
@@ -1140,6 +1063,9 @@ function toolchain(_buildDir, _libDir)
 			"-lc++",
 		}
 		buildoptions_cpp {
+			"-std=c++11",
+		}
+		buildoptions_objcpp {
 			"-std=c++11",
 		}
 		buildoptions {
@@ -1293,12 +1219,8 @@ function toolchain(_buildDir, _libDir)
 			"$(SCE_ORBIS_SDK_DIR)/target/include",
 			"$(SCE_ORBIS_SDK_DIR)/target/include_common",
 		}
-		buildoptions {
-		}
 		buildoptions_cpp {
 			"-std=c++11",
-		}
-		linkoptions {
 		}
 
 	configuration { "qnx-arm" }
@@ -1340,6 +1262,7 @@ function toolchain(_buildDir, _libDir)
 		}
 		links {
 			"rt",
+			"dl",
 		}
 		linkoptions {
 			"-Wl,--gc-sections",
@@ -1408,18 +1331,6 @@ function strip()
 			"$(SILENT) $(MINGW)/bin/strip -s \"$(TARGET)\""
 		}
 
-	configuration { "pnacl" }
-		postbuildcommands {
-			"$(SILENT) echo Running pnacl-finalize.",
-			"$(SILENT) " .. naclToolchain .. "finalize \"$(TARGET)\""
-		}
-
-	configuration { "*nacl*", "Release" }
-		postbuildcommands {
-			"$(SILENT) echo Stripping symbols.",
-			"$(SILENT) " .. naclToolchain .. "strip -s \"$(TARGET)\""
-		}
-
 	configuration { "asmjs" }
 		postbuildcommands {
 			"$(SILENT) echo Running asmjs finalize.",
@@ -1431,7 +1342,14 @@ function strip()
 --				.. "-s USE_WEBGL2=1 "
 				.. "--memory-init-file 1 "
 				.. "\"$(TARGET)\" -o \"$(TARGET)\".html "
---				.. "--preload-file ../../../examples/runtime@/"
+--				.. "--preload-file ../../../examples/runtime@/ "
+				.. "-s PRECISE_F32=1"
+		}
+
+	configuration { "riscv" }
+		postbuildcommands {
+			"$(SILENT) echo Stripping symbols.",
+			"$(SILENT) $(FREEDOM_E_SDK)/toolchain/bin/riscv32-unknown-elf-strip -s \"$(TARGET)\""
 		}
 
 	configuration {} -- reset configuration
